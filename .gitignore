@@ -1,1 +1,12 @@
+# backend
+venv
+lib
+include
+bin
+pyenv.cfg
+
+# frontend
+
+# general
 notes.txt
+
