@@ -29,12 +29,34 @@ class Integration(BaseModel):
 
 
 class Market(BaseModel):
-    name: str
-    integration: List[Integration]
+    market_name: str
+    integrations: List[Integration]
     stocks: List[Stock]
 
-    # created user id???
+class DisplayMarket(BaseModel):
+    stocks: List[Stock]
+    market_id: str
+    status: str
+    market_name: str
 
+
+class StockPrice(BaseModel):
+    price: float
+    timestamp: datetime
+
+class StockPrices(BaseModel):
+    prices: List[StockPrice]
+
+class SimpleStock(BaseModel):
+    stock_id: str
+    ticker: str
+    shares: int
+
+class StockMarket(BaseModel):
+    market_name: str
+    market_id: str
+    stocks: List[SimpleStock]
+    free_currency: float
 
 
 

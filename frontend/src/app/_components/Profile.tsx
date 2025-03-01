@@ -4,7 +4,7 @@
 import { useAuth } from "../_context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { logoutUser } from "../_utils/api";
+import { logoutUser } from "../_api/user";
 
 export default function Profile() {
   const { user, setUser } = useAuth();

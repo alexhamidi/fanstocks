@@ -38,3 +38,42 @@ export interface Credentials {
   email: string;
   password: string;
 }
+
+export interface ExploreMarket {
+  stocks: Stock[];
+  market_name: string;
+  market_id: string;
+  status: "none" | "owned" | "joined";
+}
+
+export interface DashboardMarket {
+  market_name: string;
+  market_id: string;
+  free_currency: number
+}
+
+
+export interface SimpleStock {
+  stock_id: string
+  ticker: string
+  shares: number
+}
+
+
+export interface StockMarket {
+  market_name: string;
+  market_id: string
+  stocks: SimpleStock[]
+  free_currency: number
+}
+
+
+export interface StockPrice {
+  price: number;
+  timestamp: string //iso8601
+}
+
+export interface StockPrices {
+  prices: StockPrice[]
+
+}

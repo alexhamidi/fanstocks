@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@tanstack/react-query": "^5.66.9",
+    "chart": "^0.1.2",
+    "chart.js": "^4.4.8",
+    "next": "^15.2.0",
+    "react-chartjs-2": "^5.3.0"
+  }
+}

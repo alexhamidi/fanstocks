@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
-import { logoutUser } from "../_utils/api";
+import { logoutUser } from "../_api/user";
 
 export default function Header() {
   const { user, setUser } = useAuth();
@@ -30,9 +30,9 @@ export default function Header() {
             { href: "/app/explore", label: "Explore" },
             { href: "/app/dashboard", label: "Dashboard" },
             { href: "/app/create", label: "Create" },
-            { href: "/app/", label: "About" },
+            { href: "/app/about", label: "About" },
           ].map(({ href, label }) => {
-            const isActive = pathname === href;
+            const isActive = pathname.startsWith(href);
             return (
               <Link
                 key={href}
@@ -49,7 +49,7 @@ export default function Header() {
         {user ? (
           <DropdownMenu open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger asChild>
-              <button className="w-8 h-8 rounded-lg overflow-hidden focus:outline-none">
+              <button className="w-8 h-8 rounded-lg overflow-hidden ">
                 <img
                   src={user?.avatar_url || "/default-avatar.png"}
                   alt="Profile"
@@ -57,10 +57,11 @@ export default function Header() {
                 />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem asChild>
-                <Link href="/app/profile">Profile</Link>
-              </DropdownMenuItem>
+            <DropdownMenuContent align="end" className="  w-48">
+            <span className="px-3 py-2 text-sm text-muted-foreground cursor-default">
+              {user.email}
+            </span>
+
               <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

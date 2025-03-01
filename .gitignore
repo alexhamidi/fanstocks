@@ -6,6 +6,7 @@ bin
 pyenv.cfg
 
 # frontend
+node_modules/
 
 # general
 notes.txt

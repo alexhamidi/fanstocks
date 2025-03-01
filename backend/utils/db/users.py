@@ -42,6 +42,7 @@ def register_user(user_data: Credentials):
             "email": user_data.email,
             "password": user_data.password
         })
+        print("auth succesfull")
     except Exception as e:
         print(str(e))
         if "User already registered" in str(e):

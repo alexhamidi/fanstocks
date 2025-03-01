@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation"; // Import useRouter
 import { ProfileData } from "../_models/types";
-import { getCurrentUser } from "../_utils/api";
+import { getCurrentUser } from "../_api/user";
 
 type AuthContextType = {
   user: ProfileData | null;

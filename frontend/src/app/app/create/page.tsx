@@ -17,10 +17,12 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import axios from "axios";
+import axios, {isAxiosError} from "axios";
 import { X } from "lucide-react";
 import ProtectedRoute from "../../_components/ProtectedRoute";
 import { useError } from "../../_context/ErrorContext";
+import {createMarket} from "../../_api/markets"
+import {searchCommunity} from "../../_api/community"
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -41,16 +43,17 @@ export default function Create() {
       return;
     }
     try {
-      const full_url = `${BACKEND_URL}/api/${newIntegration!.service === "reddit" ? "reddit/subreddit_search" : "twitch/channel_search"}`;
-      const response = await axios.post(full_url, null, {
-        params: { term: searchTerm },
-        withCredentials: true, // Add this line
-      });
-      const communities: Community[] = response.data.data;
+      const response = await searchCommunity(searchTerm, newIntegration!.service!);
+      console.log(response)
+      const communities: Community[] = response.data.communities;
       setSearchResults(communities);
-    } catch (error) {
-      console.error("Error fetching communities:", error);
-      setSearchResults([]);
+    } catch (err) {
+      let errorMessage = "Error searching";
+      if (isAxiosError(err)) {
+        errorMessage = err.message
+      }
+      triggerError(errorMessage);
+      setSearchResults([])
     }
   };
 
@@ -138,7 +141,7 @@ export default function Create() {
 
   // disabled = {marketName === "" || integrations.length === 0 || stocks.length === 0}
 
-  const handleCreateMarket = () => {
+  const handleCreateMarket = async() => {
     if (marketName === "") {
       triggerError("Must provide a name");
       return;
@@ -149,7 +152,15 @@ export default function Create() {
       triggerError("Must provide at least one stock");
       return;
     }
-    console.log(marketName, integrations, stocks);
+    try {
+      createMarket(marketName, integrations,  stocks);
+    } catch (err) {
+      let errorMessage = "Error creating market";
+      if (isAxiosError(err)) {
+        errorMessage = err.message;
+      }
+      triggerError(errorMessage);
+    }
   };
 
   return (
@@ -158,9 +169,10 @@ export default function Create() {
         <div className="flex flex-col w-[60vw] p-4">
           <h1 className="text-3xl font-semibold mb-2">Create a new market</h1>
           <div className="text-sm text-gray-700 font-mono">
+
             markets are Lorem Ipsum is simply dummy text of the printing and
-            typesetting industry. Lorem Ipsum has been the industry's standard
-            dummy text ever since the 1500s, when an unknown printer
+            typesetting industry. streamer stocks has been the industry's standard
+            dummy text ever drive community engagement
           </div>
           <hr className="mt-2 mb-2 border-zinc-400"></hr>
           <div className="my-4">
@@ -299,10 +311,10 @@ export default function Create() {
                   key={index}
                   className="grid grid-cols-2 relative p-2 border-b border-zinc-400"
                 >
-                  <span>${stock.ticker.toUpperCase()}</span>
+                  <span>${stock.ticker}</span>
                   <span>{stock.names?.join(", ")}</span>
                   <button
-                    onClick={() => handleDeleteIntegration(index)}
+                    onClick={() => handleDeleteStock(index)}
                     className="absolute right-3 top-3"
                   >
                     <X size={16} />
