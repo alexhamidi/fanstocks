@@ -1,15 +1,13 @@
 import axios, { AxiosResponse } from "axios";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 import { Credentials } from "../_models/types";
-import {handleResponse} from "../_utils/api"
 // Define a function to handle the response
-
 
 export const getCurrentUser = async () => {
   const response = await axios.get(`${BACKEND_URL}/api/me`, {
     withCredentials: true,
   });
-  return handleResponse(response);
+  return response.data;
 };
 
 export const loginUser = async (credentials: Credentials) => {
@@ -17,7 +15,7 @@ export const loginUser = async (credentials: Credentials) => {
     headers: { "Content-Type": "application/json" },
     withCredentials: true,
   });
-  return handleResponse(response);
+  return response.data;
 };
 
 export const registerUser = async (credentials: Credentials) => {
@@ -29,7 +27,7 @@ export const registerUser = async (credentials: Credentials) => {
       withCredentials: true,
     },
   );
-  return handleResponse(response);
+  return response.data;
 };
 
 export const logoutUser = async () => {
@@ -38,5 +36,5 @@ export const logoutUser = async () => {
     {},
     { withCredentials: true },
   );
-  return handleResponse(response);
+  return response.data;
 };

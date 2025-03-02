@@ -4,7 +4,7 @@
 from utils import reddit, twitch, auth
 from utils.db import users, markets
 
-from models.classes import Credentials, ProfileData, Integration, Stock, Market
+from models.classes import Credentials, ProfileData, Integration, Stock, Market, StockMarket, ExploreMarket, DashboardMarket
 import os
 from pydantic import BaseModel
 from typing import Dict, List
@@ -84,14 +84,10 @@ def verify_token(request: Request):
 @app.post("/api/login")
 async def login(user_data: Credentials, response: Response):
     try:
-        print(user_data)
         user, session = users.login_user(user_data)
-        print("user obtained succesfully")
         auth.update_cookies(response, session)
-        print("cookies updated succesfully")
 
         profile_data: ProfileData = users.get_user(user.id)
-        print(profile_data)
 
         return {"status": 200, "message": "Login successful", "data": {"profile": profile_data}}
     except HTTPException as e:
@@ -109,7 +105,6 @@ async def register(user_data: Credentials, response: Response):
         auth.update_cookies(response, session)
         profile_data = users.get_user(user.id)
 
-        print("obtained succesfully, profile data = ", profile_data)
         return {"status": 200, "message": "Registration and login successful", "data": {"profile": profile_data}}
     except HTTPException as e:
         raise e
@@ -183,6 +178,9 @@ async def channel_search(term: str = Query(...), payload: Dict = Depends(verify_
 
 
 
+#=======================================================================#
+# CREATE MARKET
+#=======================================================================#
 @app.post("/api/markets/create")
 def create_market(market_data: Market = Body(...), payload: Dict = Depends(verify_token)):
     user_id = payload.get("sub")
@@ -196,61 +194,80 @@ def create_market(market_data: Market = Body(...), payload: Dict = Depends(verif
         print(e)
         raise HTTPException(status_code=500, detail="Internal server error")
 
-
-
-
-@app.get("/api/markets/public") # get all public markets - for now, all markets
-def get_public(payload: Dict = Depends(verify_token)):
+#=======================================================================#
+# GET MARKETS FOR EXPLORE
+#=======================================================================#
+@app.get("/api/markets")
+def get_all(payload: Dict = Depends(verify_token)):
 
     user_id = payload.get("sub")
 
     try:
 
-        returned_markets = markets.get_all(user_id)
+        markets_response = markets.get_all_markets(user_id)
 
-        return {"status": 200, "data":{"markets":returned_markets}}
+        return {"status": 200, "data":{"markets":markets_response}}
     except Exception as e:
             print(e)
             raise HTTPException(status_code=500, detail="Internal server error")
 
-
-@app.get("/api/markets/joined")
+#=======================================================================#
+# GET JOINED MARKET
+#=======================================================================#
+@app.get("/api/markets/joined") # here
 def get_joined(payload: Dict = Depends(verify_token)):
 
     user_id = payload.get("sub")
 
     try:
 
-        joined_markets = markets.get_joined(user_id)
-        print(joined_markets)
+        markets_response = markets.get_joined_markets(user_id)
 
-        return {"status": 200, "data":{"markets":joined_markets}}
+        return {"status": 200, "data":{"markets":markets_response}}
     except Exception as e:
             print(e)
             raise HTTPException(status_code=500, detail="Internal server error")
 
 
+#=======================================================================#
+# JOIN MARKET
+#=======================================================================#
 @app.post("/api/markets/join") # user adds a market to their account
 def join_market(market_id: str = Query(...), payload: Dict = Depends(verify_token)):
 
     user_id = payload.get("sub")
     try:
-
         markets.user_join(user_id, market_id )
-
         return {"status": 200}
     except Exception as e:
             print(e)
             raise HTTPException(status_code=500, detail="Internal server error")
 
-@app.get("/api/markets")
+#=======================================================================#
+# GET ENTIRE STOCKMARKET
+#=======================================================================#
+@app.get("/api/markets/stockmarket")
 def get_market(market_id: str = Query(...), payload: Dict = Depends(verify_token)):
+
     user_id = payload.get("sub")
     try:
-
         market = markets.get_stock_market(user_id, market_id )
-
         return {"status": 200,"data":{"market":market}}
+    except Exception as e:
+            print(e)
+            raise HTTPException(status_code=500, detail="Internal server error")
+
+
+#=======================================================================#
+# POST COMMENT
+#=======================================================================#
+@app.post("/api/markets/comment")
+def post_new_comment(market_id: str = Query(...), message: str = Query(...), payload: Dict = Depends(verify_token)):
+
+    user_id = payload.get("sub")
+    try:
+        markets.post_comment(user_id, market_id, message)
+        return {"status": 200}
     except Exception as e:
             print(e)
             raise HTTPException(status_code=500, detail="Internal server error")
@@ -264,15 +281,28 @@ def get_market(market_id: str = Query(...), payload: Dict = Depends(verify_token
 
 
 
-@app.get("/api/stocks/prices") # get all stocks associated with a given account
-def get_prices(stock_id: str = Query(...), payload: Dict = Depends(verify_token)):
-
+@app.get("/api/stocks/buy")
+def execute_buy_order(stock_id: str = Query(...), shares: int = Query(...), payload: Dict = Depends(verify_token)):
+    user_id = payload.get("sub")
     try:
 
-        prices = markets.get_stock_prices(stock_id)
+        markets.buy_stock(user_id, stock_id, shares)
+
+        return {"status": 200}
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
-        return {"status": 200,"data":{"prices":prices}}
+
+@app.get("/api/stocks/sell")
+def execute_sell_order(stock_id: str = Query(...), shares: int = Query(...), payload: Dict = Depends(verify_token)):
+    user_id = payload.get("sub")
+    try:
+
+        markets.sell_stock(user_id, stock_id, shares)
+
+        return {"status": 200}
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail="Internal server error")

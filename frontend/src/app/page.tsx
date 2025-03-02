@@ -2,17 +2,24 @@
 
 export default async function Home() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <main className="flex-grow flex justify-center px-4 mt-[30vh] py-8">
+    <main className="flex flex-col justify-center items-center flex-grow">
         <div className="text-center">
-          <h1 className="text-4xl font-semibold dark:text-white mb-4">
+          <h1 className="text-4xl font-semibold dark:text-white">
             FanStocks
           </h1>
-          <div className="text-sm text-gray-700 dark:text-gray-300 font-mono">
+          <p className="text-sm text-gray-700 dark:text-gray-300 mt-4 font-mono ">
             trading, for your community.
-          </div>
+          </p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 mt-4 font-mono hover:underline">
+            [feature images]
+          </p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 mt-4 font-mono hover:underline">
+            [chat excerpts]
+          </p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 mt-4 font-mono hover:underline">
+            [testimonials]
+          </p>
         </div>
       </main>
-    </div>
   );
 }

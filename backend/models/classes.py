@@ -33,31 +33,40 @@ class Market(BaseModel):
     integrations: List[Integration]
     stocks: List[Stock]
 
-class DisplayMarket(BaseModel):
-    stocks: List[Stock]
+class ExploreMarket(BaseModel):
     market_id: str
-    status: str
     market_name: str
+    status: Literal["joined", "owned", "none"]
+
+class DashboardMarket(BaseModel):
+    market_id: str
+    market_name: str
+    free_currency: float
+
 
 
 class StockPrice(BaseModel):
     price: float
     timestamp: datetime
 
-class StockPrices(BaseModel):
-    prices: List[StockPrice]
+class Comment(BaseModel):
+    created_at: datetime
+    user_email: str
+    chat_id: str
+    message: str
 
-class SimpleStock(BaseModel):
+class Stock(BaseModel):
     stock_id: str
     ticker: str
+    comments: List[Comment]
+    prices: List[StockPrice]
     shares: int
 
 class StockMarket(BaseModel):
     market_name: str
     market_id: str
-    stocks: List[SimpleStock]
+    stocks: List[Stock]
     free_currency: float
-
 
 
 

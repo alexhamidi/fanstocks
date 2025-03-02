@@ -1,15 +1,7 @@
 "use client";
 
-import {
-  Integration,
-  IntegrationService,
-  UIntegration,
-  Stock,
-  UStock,
-  Community,
-} from "../../_models/types";
-import { uIntegration, uStock } from "../../_constants/constants";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+import { X } from "lucide-react";
 import {
   Select,
   SelectTrigger,
@@ -17,46 +9,47 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import axios, {isAxiosError} from "axios";
-import { X } from "lucide-react";
 import ProtectedRoute from "../../_components/ProtectedRoute";
-import { useError } from "../../_context/ErrorContext";
-import {createMarket} from "../../_api/markets"
-import {searchCommunity} from "../../_api/community"
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+import { useMessage } from "../../_context/MessageContext";
+import { useLoading } from "../../_context/LoadingContext";
+import { createMarket } from "../../_api/markets";
+import { searchCommunity } from "../../_api/community";
+import { requestWrapper } from "../../_utils/api";
+import {
+  Integration,
+  IntegrationService,
+  UIntegration,
+  CreateStock,
+  UStock,
+  Community,
+} from "../../_models/types";
+import { uIntegration, uStock } from "../../_constants/constants";
+import MarketComponent from "../../_components/MarketComponent";
 
 export default function Create() {
-  const [marketName, setMarketName] = useState<string>("");
+  // Market state
+  const [marketName, setMarketName] = useState("");
+
+  // Integration state
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [newIntegration, setNewIntegration] = useState<UIntegration | null>(
     null,
   );
   const [searchResults, setSearchResults] = useState<Community[]>([]);
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const { triggerError } = useError();
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const handleSearchSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!searchTerm.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    try {
-      const response = await searchCommunity(searchTerm, newIntegration!.service!);
-      console.log(response)
-      const communities: Community[] = response.data.communities;
-      setSearchResults(communities);
-    } catch (err) {
-      let errorMessage = "Error searching";
-      if (isAxiosError(err)) {
-        errorMessage = err.message
-      }
-      triggerError(errorMessage);
-      setSearchResults([])
-    }
-  };
+  // Stock state
+  const [stocks, setStocks] = useState<CreateStock[]>([]);
+  const [newStock, setNewStock] = useState<UStock | null>(null);
+  const [newName, setNewName] = useState<string | null>(null);
 
+  // Context hooks
+  const { triggerError } = useMessage();
+  const { setLoading } = useLoading();
+
+  // ========================================
+  // INTEGRATIONS
+  // ========================================
   const handleSelectService = (value: string) => {
     setNewIntegration({
       community: undefined,
@@ -75,14 +68,29 @@ export default function Create() {
     setSearchResults([]);
   };
 
-  const handleAddIntegration = () => {
-    if (
-      !newIntegration ||
-      !newIntegration.community ||
-      !newIntegration.service
-    ) {
+  const handleSearchSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!searchTerm.trim()) {
+      setSearchResults([]);
       return;
     }
+    const response = await requestWrapper(
+      "Error searching",
+      triggerError,
+      "",
+      null,
+      setLoading,
+      {},
+      searchCommunity,
+      searchTerm,
+      newIntegration!.service!,
+    );
+    setSearchResults(response.data.communities);
+  };
+
+  const handleAddIntegration = () => {
+    if (!newIntegration?.community || !newIntegration?.service) return;
+
     setIntegrations([...integrations, newIntegration as Integration]);
     setNewIntegration(null);
     setSearchTerm("");
@@ -90,14 +98,14 @@ export default function Create() {
   };
 
   const handleDeleteIntegration = (index: number) => {
-    const updatedIntegrations = integrations.filter((_, idx) => idx !== index);
-    setIntegrations(updatedIntegrations);
+    setIntegrations(integrations.filter((_, idx) => idx !== index));
   };
 
-  const [stocks, setStocks] = useState<Stock[]>([]);
-  const [newStock, setNewStock] = useState<UStock | null>(null);
-  const [newName, setNewName] = useState<string | null>(null);
+  // ========================================
+  // STOCKS
+  // ========================================
 
+  // Stock handlers
   const handleTickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewStock((prev) => ({
       ...prev!,
@@ -107,9 +115,8 @@ export default function Create() {
 
   const handleAddName = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!newStock || !newName?.trim()) {
-      return;
-    }
+    if (!newStock || !newName?.trim()) return;
+
     setNewStock((prev) => ({
       ...prev!,
       names: prev?.names ? [...prev.names, newName] : [newName],
@@ -118,20 +125,19 @@ export default function Create() {
   };
 
   const handleAddStock = () => {
-    if (!newStock || !newStock.ticker || !newStock.names) {
-      return;
-    }
-    setStocks([...stocks, newStock as Stock]);
+    if (!newStock?.ticker || !newStock?.names) return;
+
+    setStocks([...stocks, newStock as CreateStock]);
     setNewStock(null);
   };
 
   const handleDeleteStock = (index: number) => {
-    const updatedStocks = stocks.filter((_, idx) => idx !== index);
-    setStocks(updatedStocks);
+    setStocks(stocks.filter((_, idx) => idx !== index));
   };
 
   const handleDeleteName = (index: number) => {
-    if (!newStock || !newStock.names) return;
+    if (!newStock?.names) return;
+
     const updatedNames = newStock.names.filter((_, idx) => idx !== index);
     setNewStock((prev) => ({
       ...prev!,
@@ -139,257 +145,207 @@ export default function Create() {
     }));
   };
 
-  // disabled = {marketName === "" || integrations.length === 0 || stocks.length === 0}
-
-  const handleCreateMarket = async() => {
+  // Form submission
+  const handleCreateMarket = async () => {
     if (marketName === "") {
       triggerError("Must provide a name");
-      return;
     } else if (integrations.length === 0) {
       triggerError("Must provide at least one integration");
-      return;
     } else if (stocks.length === 0) {
       triggerError("Must provide at least one stock");
-      return;
-    }
-    try {
-      createMarket(marketName, integrations,  stocks);
-    } catch (err) {
-      let errorMessage = "Error creating market";
-      if (isAxiosError(err)) {
-        errorMessage = err.message;
-      }
-      triggerError(errorMessage);
+    } else {
+      await requestWrapper(
+        "Error creating market",
+        triggerError,
+        "",
+        null,
+        setLoading,
+        {},
+        createMarket,
+        marketName,
+        integrations,
+        stocks,
+      );
     }
   };
 
   return (
     <ProtectedRoute>
-      <main className="flex flex-col items-center ">
+      <main className="flex flex-col items-center">
         <div className="flex flex-col w-[60vw] p-4">
           <h1 className="text-3xl font-semibold mb-2">Create a new market</h1>
-          <div className="text-sm text-gray-700 font-mono">
+          <hr className="mt-2 mb-2 border-zinc-400" />
 
-            markets are Lorem Ipsum is simply dummy text of the printing and
-            typesetting industry. streamer stocks has been the industry's standard
-            dummy text ever drive community engagement
-          </div>
-          <hr className="mt-2 mb-2 border-zinc-400"></hr>
+          {/* Market Name Section */}
           <div className="my-4">
-            <h3 className="text-xl font-semibold  mb-1">Market Name</h3>
+            <h3 className="text-xl font-semibold mb-1">Market Name</h3>
             <input
               type="text"
-              className="border border-zinc-400 rounded w-[100%] p-1"
+              className="border border-zinc-400 rounded w-full p-1"
               onChange={(e) => setMarketName(e.target.value)}
             />
           </div>
 
-          <div className="my-4">
-            <h3 className="text-xl font-semibold  mb-2">Integrations</h3>
-            <div className="w-full ">
-              <div className="grid grid-cols-2 text-gray-700 font-mono p-2 border-b border-zinc-400">
-                <span>service</span>
-                <span>community</span>
-              </div>
-              {integrations.map((integration, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-2 relative p-2 border-b border-zinc-400"
-                >
-                  <span>{integration.service}</span>
-                  <span>{integration.community.name}</span>
-                  <button
-                    onClick={() => handleDeleteIntegration(index)}
-                    className="absolute right-3 top-3"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
+          <MarketComponent
+            title="Integrations"
+            items={integrations}
+            newItem={newIntegration}
+            deleteItemFunction={handleDeleteIntegration}
+            addNewFunction={handleAddIntegration}
+            setNewFunction={setNewIntegration}
+            defaultItem={uIntegration}
+            itemColumns={[
+              { key: "service", label: "service" },
+              {
+                key: "community",
+                label: "community",
+                render: (item) => item.community.name,
+              },
+            ]}
+            NewComponents={
+              <>
+                {newIntegration && (
+                  <>
+                    <div className="m-2">
+                      <h5 className="font-semibold mb-1">Service</h5>
+                      <Select
+                        value={newIntegration.service}
+                        onValueChange={handleSelectService}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a service" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="reddit">reddit</SelectItem>
+                          <SelectItem value="twitch">twitch</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-            {newIntegration ? (
-              <div className="flex flex-col rounded mt-1 border border-zinc-400 ">
-                <h4 className="text-lg font-semibold  text-center mb-2">
-                  New Integration
-                </h4>
-                <div className="m-2">
-                  <h5 className="font-semibold mb-1">Service</h5>
-                  <Select
-                    value={newIntegration.service}
-                    onValueChange={handleSelectService}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a service" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="reddit">reddit</SelectItem>
-                      <SelectItem value="twitch">twitch</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                    {/* Community Search */}
+                    {newIntegration.service && (
+                      <div className="m-2">
+                        <h5 className="font-semibold mb-1">
+                          {newIntegration.service === "reddit"
+                            ? "Subreddit"
+                            : "Streamer"}
+                        </h5>
+                        <div className="relative">
+                          <form onSubmit={handleSearchSubmit}>
+                            <input
+                              type="text"
+                              className="border border-zinc-400 rounded w-full p-1"
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                          </form>
 
-                {newIntegration.service && (
-                  <div className="m-2">
-                    <h5 className="font-semibold mb-1">
-                      {newIntegration.service === "reddit"
-                        ? "Subreddit"
-                        : "Streamer"}
-                    </h5>
-                    <div className="relative">
-                      <form onSubmit={handleSearchSubmit}>
+                          {/* Search Results */}
+                          {searchResults.length > 0 && (
+                            <div className="absolute z-10 w-full mt-1 bg-white border border-zinc-400 rounded shadow-lg">
+                              {searchResults.map((community) => (
+                                <div
+                                  key={community.id}
+                                  className="p-2 hover:bg-gray-100 cursor-pointer"
+                                  onClick={() =>
+                                    handleSelectCommunity(community)
+                                  }
+                                >
+                                  <div className="font-semibold">
+                                    {community.name}
+                                  </div>
+                                  <div className="text-sm text-gray-600">
+                                    {community.description}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {community.followers} followers
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            }
+          />
+
+          {/* Stocks Section */}
+          <MarketComponent
+            title="Stocks"
+            items={stocks}
+            newItem={newStock}
+            deleteItemFunction={handleDeleteStock}
+            addNewFunction={handleAddStock}
+            setNewFunction={setNewStock}
+            defaultItem={uStock}
+            itemColumns={[
+              {
+                key: "ticker",
+                label: "ticker",
+                render: (item) => `$${item.ticker}`,
+              },
+              {
+                key: "names",
+                label: "names",
+                render: (item) => item.names?.join(", "),
+              },
+            ]}
+            NewComponents={
+              <>
+                {newStock && (
+                  <>
+                    {/* Ticker Input */}
+                    <div className="m-2">
+                      <h5 className="font-semibold mb-1">Ticker</h5>
+                      <input
+                        type="text"
+                        className="border border-zinc-400 rounded w-full p-1"
+                        value={newStock.ticker || ""}
+                        onChange={handleTickerChange}
+                      />
+                    </div>
+
+                    {/* Names Input */}
+                    <div className="m-2">
+                      <h5 className="font-semibold mb-1">Names</h5>
+                      <form onSubmit={handleAddName}>
                         <input
                           type="text"
-                          className="border border-zinc-400 rounded w-[100%] p-1"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="border border-zinc-400 rounded w-full p-1"
+                          value={newName || ""}
+                          onChange={(e) => setNewName(e.target.value)}
                         />
                       </form>
-                      {searchResults.length > 0 && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border border-zinc-300 rounded shadow-lg">
-                          {searchResults.map((community) => (
-                            <div
-                              key={community.id}
-                              className="p-2 hover:bg-gray-100 cursor-pointer flex items-center"
-                              onClick={() => handleSelectCommunity(community)}
+
+                      {/* Added Names */}
+                      <div className="flex flex-wrap mt-2">
+                        {newStock.names?.map((name, idx) => (
+                          <div
+                            className="py-1 px-2 bg-zinc-200 rounded mr-2 mb-1 flex"
+                            key={idx}
+                          >
+                            <span>{name}</span>
+                            <button
+                              className="ml-1"
+                              onClick={() => handleDeleteName(idx)}
                             >
-                              <div className="flex-1">
-                                <div className="font-semibold">
-                                  {community.name}
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                  {community.description}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {community.followers} followers
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  </>
                 )}
-                <div className="flex justify-end m-2">
-                  <button
-                    className="  p-1 px-3 rounded"
-                    onClick={handleAddIntegration}
-                    disabled={
-                      !newIntegration.service || !newIntegration.community
-                    }
-                  >
-                    Add
-                  </button>
-                  <button
-                    className="p-1 px-3 rounded"
-                    onClick={() => setNewIntegration(null)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                className="mt-2 "
-                onClick={() => setNewIntegration(uIntegration)}
-              >
-                + Add Integration
-              </button>
-            )}
-          </div>
+              </>
+            }
+          />
 
-          <div className="my-4">
-            <h3 className="text-xl font-semibold  mb-2">Stocks</h3>
-            <div className="w-full ">
-              <div className="grid grid-cols-2 text-gray-700 font-mono p-2 border-b border-zinc-400">
-                <span>ticker</span>
-                <span>names</span>
-              </div>
-              {stocks.map((stock, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-2 relative p-2 border-b border-zinc-400"
-                >
-                  <span>${stock.ticker}</span>
-                  <span>{stock.names?.join(", ")}</span>
-                  <button
-                    onClick={() => handleDeleteStock(index)}
-                    className="absolute right-3 top-3"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {newStock ? (
-              <div className="flex flex-col rounded mt-1 border border-zinc-400 ">
-                <h4 className="text-lg font-semibold  text-center mb-2">
-                  New Stock
-                </h4>
-
-                <div className="m-2">
-                  <h5 className="font-semibold mb-1">Ticker</h5>
-                  <form>
-                    <input
-                      type="text"
-                      className="border border-zinc-400 rounded w-[100%] p-1"
-                      value={newStock.ticker}
-                      onChange={handleTickerChange}
-                    />
-                  </form>
-                </div>
-
-                <div className="m-2">
-                  <h5 className="font-semibold mb-1">Names</h5>
-                  <form onSubmit={handleAddName}>
-                    <input
-                      type="text"
-                      className="border border-zinc-400 rounded w-[100%] p-1"
-                      value={newName || ""}
-                      onChange={(e) => setNewName(e.target.value)}
-                    />
-                  </form>
-                  <div className="flex flex-row">
-                    {newStock.names &&
-                      newStock.names.map((name, idx) => (
-                        <div
-                          className="py-1 px-2 bg-zinc-200 rounded mr-2 flex"
-                          key={idx}
-                        >
-                          <span className="mr-1">{name}</span>
-                          <button onClick={() => handleDeleteName(idx)}>
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-
-                <div className="flex justify-end m-2">
-                  <button
-                    className="  p-1 px-3 rounded"
-                    onClick={handleAddStock}
-                    disabled={!newStock.ticker || !newStock.names}
-                  >
-                    Add
-                  </button>
-                  <button
-                    className="p-1 px-3 rounded"
-                    onClick={() => setNewStock(null)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button className="mt-2 " onClick={() => setNewStock(uStock)}>
-                + Add Stock
-              </button>
-            )}
-          </div>
-
+          {/* Create Button */}
           <div className="my-4">
             <button
               className="bg-green-500 text-white p-1 px-2 rounded"

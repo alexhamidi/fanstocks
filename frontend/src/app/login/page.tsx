@@ -1,56 +1,54 @@
-// src/app/login/page.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginUser } from "../_api/user";
+import { useLoading } from "../_context/LoadingContext";
 import { useAuth } from "../_context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useError } from "../_context/ErrorContext";
-import { isAxiosError } from "axios";
+import { useMessage } from "../_context/MessageContext";
+import { requestWrapper } from "../_utils/api";
 
 export default function Login() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const { setUser } = useAuth();
   const router = useRouter();
-  const { triggerError } = useError();
+  const { triggerError } = useMessage();
+  const { setLoading } = useLoading();
 
-  // src/app/login/page.tsx (add this to the handleSubmit)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const { data } = await loginUser(credentials);
-      setUser(data.profile);
-      const searchParams = new URLSearchParams(window.location.search);
-      router.push(searchParams.get("redirect") || "/app/dashboard");
-    } catch (err) {
-      let errorMessage = "Login Failed";
-      console.log(typeof err);
-      if (isAxiosError(err) && err.status === 401) {
-        errorMessage = "Incorrect Password";
-      } else if (isAxiosError(err) && err.status === 404) {
-        errorMessage = "User not found";
-      }
-      triggerError(errorMessage);
-    }
+    const response = await requestWrapper(
+      "Login Failed",
+      triggerError,
+      "",
+      null,
+      setLoading,
+      { 401: "incorrect password", 404: "User not found" },
+      loginUser,
+      credentials,
+    );
+    if (!response) return;
+    setUser(response.data.profile);
+    const searchParams = new URLSearchParams(window.location.search);
+    router.push(searchParams.get("redirect") || "/app/dashboard");
   };
 
   return (
-    <main className="flex flex-col items-center ">
-      <Card className="w-full sm:w-96 bg-white dark:bg-zinc-800 mt-[20vh] dark:border-zinc-700">
+    <main className="flex flex-col justify-center items-center flex-grow">
+      <Card className="w-full sm:w-96 bg-white border border-gray-200">
         <CardHeader>
-          <CardTitle className="pl-1 text-2xl dark:text-white">Login</CardTitle>
+          <CardTitle className="pl-1 text-2xl">Login</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="p-1">
-              <Label htmlFor="email" className="dark:text-white">
-                Email
-              </Label>
+              <Label htmlFor="email">Email</Label>
               <Input
+                className="border-gray-200"
                 id="email"
                 type="email"
                 placeholder="Enter your email"
@@ -62,10 +60,9 @@ export default function Login() {
               />
             </div>
             <div className="p-1">
-              <Label htmlFor="password" className="dark:text-white">
-                Password
-              </Label>
+              <Label htmlFor="password">Password</Label>
               <Input
+                className="border-gray-200"
                 id="password"
                 type="password"
                 placeholder="Enter your password"

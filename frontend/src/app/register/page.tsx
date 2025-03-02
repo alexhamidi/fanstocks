@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useError } from "../_context/ErrorContext";
+import { useMessage } from "../_context/MessageContext";
 import { isAxiosError } from "axios";
 
 export default function Register() {
@@ -17,7 +17,7 @@ export default function Register() {
   const { setUser } = useAuth();
   const router = useRouter();
 
-  const { triggerError } = useError();
+  const { triggerError } = useMessage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

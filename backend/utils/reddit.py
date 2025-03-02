@@ -31,7 +31,7 @@ async def get_subreddits(term: str) -> List[Community]:
         subreddits = response.json()["data"]["children"]
         return [Community(
             name=sub["data"]['display_name'],
-            id=sub["data"]['id'],
+            id=sub["data"]['display_name'],
             followers=sub["data"]["subscribers"],
             description=sub["data"]["public_description"]
         ) for sub in subreddits]

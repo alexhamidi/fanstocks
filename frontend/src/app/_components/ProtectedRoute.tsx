@@ -1,4 +1,3 @@
-// src/app/_components/ProtectedRoute.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -10,19 +9,16 @@ export default function ProtectedRoute({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading } = useAuth();
+  const { user, isAuthLoaded } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      // console.log("NOT_AUTHORIZED!!!")
-      router.push("/login");
+    if (isAuthLoaded && !user) {
+      router.replace("/login"); // Use replace to prevent back navigation
     }
-  }, [user, isLoading, router]);
+  }, [isAuthLoaded, user, router]);
 
-  if (isLoading || !user) {
-    return <div>Loading...</div>;
-  }
+  if (!isAuthLoaded || !user) return null; // Prevent flickering
 
   return <>{children}</>;
 }
