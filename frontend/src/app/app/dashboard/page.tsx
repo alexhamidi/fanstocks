@@ -46,7 +46,7 @@ export default function Dashboard() {
               markets.map((market) => (
                 <div
                   key={market.market_id}
-                  className="group relative rounded-xl p-6 border border-gray-200"
+                  className="group relative rounded-xl p-6 border border-gray-200 mb-2"
                 >
                   <div className="flex items-start justify-between">
                     <div>

@@ -98,9 +98,9 @@ def get_stock_market(user_id: str, market_id: str):
 #====================================================#
 # BUY STOCK
 #====================================================#
-def buy_stock(user_id: str, stock_id: str, shares: int):
+def buy_stock(user_id: str, stock_id: str, shares: float):
 
-    stock_data = supabase_client.table("stocks").select("price, market_id").eq("id", stock_id).execute()
+    stock_data = supabase_client.table("stocks").select("price, market_id").eq("id", stock_id).execute().data
 
     if not stock_data:
         raise HTTPException(status_code=404, detail="Stock not found")
@@ -135,12 +135,44 @@ def buy_stock(user_id: str, stock_id: str, shares: int):
             "market_id": market_id
         }).execute()
 
+
+
+    params_data = supabase_client.table("stocks_params").select("mu_term, sigma_term").eq("stock_id", stock_id).execute().data
+
+    mu_factor = 100
+    sigma_factor = 1000
+
+    mu_update = shares * (1 / mu_factor)
+    sigma_update = shares * (1 / sigma_factor)
+
+    prev_mu = params_data[0]["mu_term"] if params_data else 0
+    prev_sigma = params_data[0]["sigma_term"] if params_data else 0
+
+    new_mu = prev_mu + mu_update
+    new_sigma = prev_sigma + sigma_update
+
+    if params_data:
+        supabase_client.table("stocks_params").update({
+            "mu_term": new_mu,
+            "sigma_term": new_sigma
+        }).eq("stock_id", stock_id).execute()
+
+    else:
+        supabase_client.table("stocks_params").insert({
+            "mu_term": new_mu,
+            "sigma_term": new_sigma,
+            "stock_id": stock_id
+        }).execute()
+
+
+
+
 #====================================================#
 # SELL STOCK
 #====================================================#
-def sell_stock(user_id: str, stock_id: str, shares: int):
+def sell_stock(user_id: str, stock_id: str, shares: float):
 
-    stock_data = supabase_client.table("stocks").select("price, market_id").eq("id", stock_id).execute()
+    stock_data = supabase_client.table("stocks").select("price, market_id").eq("id", stock_id).execute().data
 
     if not stock_data:
         raise HTTPException(status_code=404, detail="Stock not found")
@@ -172,7 +204,40 @@ def sell_stock(user_id: str, stock_id: str, shares: int):
     else:
         supabase_client.table("profiles_stocks").delete().eq("id", user_stock_data[0]["id"]).execute()
 
-    return {"success": True, "message": f"Successfully sold {shares} shares", "new_balance": new_free_currency}
+
+
+    params_data = supabase_client.table("stocks_params").select("mu_term, sigma_term").eq("stock_id", stock_id).execute().data
+
+    mu_factor = 100
+    sigma_factor = 1000
+
+    mu_update = -shares * (1 / mu_factor)
+    sigma_update = shares * (1 / sigma_factor)
+
+    prev_mu = params_data[0]["mu_term"] if params_data else 0
+    prev_sigma = params_data[0]["sigma_term"] if params_data else 0
+
+    new_mu = prev_mu + mu_update
+    new_sigma = prev_sigma + sigma_update
+
+    if params_data:
+        supabase_client.table("stocks_params").update({
+            "mu_term": new_mu,
+            "sigma_term": new_sigma
+        }).eq("stock_id", stock_id).execute()
+
+    else:
+        supabase_client.table("stocks_params").insert({
+            "mu_term": new_mu,
+            "sigma_term": new_sigma,
+            "stock_id": stock_id
+        }).execute()
+
+
+
+    # add back new_mu and new_sigma to the table
+
+
 
 
 #====================================================#
@@ -190,3 +255,17 @@ def post_comment(user_id: str, market_id: str, message: str):
         raise HTTPException(status_code=400, detail="Failed to post chat")
 
     return comment_response.data[0]
+
+
+
+
+#====================================================#
+# HANDLE CACHED ACTIVITY
+#====================================================#
+
+"""Basic connection example.
+"""
+
+
+
+

@@ -42,6 +42,7 @@ export default function Explore() {
       joinMarket,
       marketId,
     );
+    fetchMarkets()
   };
 
   return (

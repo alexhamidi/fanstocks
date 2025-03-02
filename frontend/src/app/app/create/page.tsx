@@ -44,7 +44,7 @@ export default function Create() {
   const [newName, setNewName] = useState<string | null>(null);
 
   // Context hooks
-  const { triggerError } = useMessage();
+  const { triggerError, triggerSuccess } = useMessage();
   const { setLoading } = useLoading();
 
   // ========================================
@@ -157,8 +157,8 @@ export default function Create() {
       await requestWrapper(
         "Error creating market",
         triggerError,
-        "",
-        null,
+        "Market Created succesfully",
+        triggerSuccess,
         setLoading,
         {},
         createMarket,
@@ -167,6 +167,7 @@ export default function Create() {
         stocks,
       );
     }
+    triggerSuccess("Market Created succesfully")
   };
 
   return (

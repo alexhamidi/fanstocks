@@ -147,17 +147,21 @@ export default function MarketView() {
     } else if (market!.free_currency < selectedStock!.price * numShares) {
       triggerError("Not enough funds to complete the purchase.");
     } else {
-      await requestWrapper(
+      const response = await requestWrapper(
         "Error executing buy order",
         triggerError,
-        "Purchase successful",
-        triggerSuccess,
+        "",//"Purchase successful",
+        null,
         null,
         {},
         executeBuyOrder,
         selectedStock!.stock_id,
         numShares,
       );
+      if (!response) return
+      await handleRefresh();
+      setBuying(false)
+      setSharesInput("")
     }
   };
 
@@ -170,17 +174,21 @@ export default function MarketView() {
     } else if (selectedStock!.shares < numShares) {
       triggerError("Not enough shares to sell.");
     } else {
-      await requestWrapper(
+      const response = await requestWrapper(
         "Error executing sell order",
         triggerError,
-        "Sale successful",
-        triggerSuccess,
+        "",//"Sale successful",
+        null,
         null,
         {},
         executeSellOrder,
         selectedStock!.stock_id,
         numShares,
       );
+      if (!response) return
+      await handleRefresh();
+      setSelling(false)
+      setSharesInput("")
     }
   };
 
@@ -195,7 +203,7 @@ export default function MarketView() {
               <Button
                 size="sm"
                 className="rounded-full w-10 h-10 p-0 bg-white border border-gray-200 hover:bg-green-50 text-slate-600"
-                onClick={() => (window.location.href = `/app/dashboard`)}
+                onClick={() => {setSelectedStock(null);(window.location.href = `/app/dashboard`)}}
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
@@ -228,7 +236,7 @@ export default function MarketView() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-semibold text-slate-800">${stock.ticker}</h3>
-                      <p className="text-sm text-slate-500">{stock.shares || 0} shares</p>
+                      <p className="text-sm text-slate-500">{(stock.shares || 0).toFixed(2)} shares</p>
                       <p className="text-sm text-slate-500"></p>
                     </div>
                   </div>
@@ -254,7 +262,7 @@ export default function MarketView() {
                           <span className="text-sm text-gray-500">Last updated: {new Date().toLocaleTimeString()}</span>
                         </div>
                         <div className="text-sm text-gray-500">
-                          Value Invested: {selectedStock.shares ?? 0} x {selectedStock.price.toFixed(2)} = {(selectedStock.price * selectedStock.shares).toFixed(2)}
+                          Value Invested: {(selectedStock.shares ?? 0).toFixed(2)} x {selectedStock.price.toFixed(2)} = {(selectedStock.price * selectedStock.shares).toFixed(2)}
                         </div>
                       </div>
 

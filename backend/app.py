@@ -282,7 +282,7 @@ def post_new_comment(market_id: str = Query(...), message: str = Query(...), pay
 
 
 @app.get("/api/stocks/buy")
-def execute_buy_order(stock_id: str = Query(...), shares: int = Query(...), payload: Dict = Depends(verify_token)):
+def execute_buy_order(stock_id: str = Query(...), shares: float = Query(...), payload: Dict = Depends(verify_token)):
     user_id = payload.get("sub")
     try:
 
@@ -296,7 +296,7 @@ def execute_buy_order(stock_id: str = Query(...), shares: int = Query(...), payl
 
 
 @app.get("/api/stocks/sell")
-def execute_sell_order(stock_id: str = Query(...), shares: int = Query(...), payload: Dict = Depends(verify_token)):
+def execute_sell_order(stock_id: str = Query(...), shares: float = Query(...), payload: Dict = Depends(verify_token)):
     user_id = payload.get("sub")
     try:
 

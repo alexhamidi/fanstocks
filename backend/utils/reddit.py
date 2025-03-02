@@ -37,5 +37,3 @@ async def get_subreddits(term: str) -> List[Community]:
         ) for sub in subreddits]
     else:
         response.raise_for_status()
-
-
