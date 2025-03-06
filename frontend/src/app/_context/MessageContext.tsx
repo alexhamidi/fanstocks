@@ -88,8 +88,8 @@ export function MessageProvider({ children }: { children: ReactNode }) {
               variant="destructive"
               className="border-green-500 relative bg-green-50 dark:border-green-700 dark:bg-green-950 z-100"
             >
-              <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
-              <AlertTitle className="text-green-500 dark:text-green-400">
+              <CheckCircle color="#22C55D" className="h-4 w-4 text-green-500 dark:text-green-400" />
+              <AlertTitle  className="text-green-500 dark:text-green-400">
                 Success
               </AlertTitle>
               <AlertDescription className="text-green-500 dark:text-green-400">

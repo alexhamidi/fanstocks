@@ -40,7 +40,7 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100 z-0">
+    <header className="sticky top-0 z-50 bg-white border-b border-gray-100 z-0">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center h-16 gap-8">
           {/* Navigation Links */}

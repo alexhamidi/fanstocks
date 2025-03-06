@@ -162,6 +162,7 @@ export default function MarketView() {
       await handleRefresh();
       setBuying(false)
       setSharesInput("")
+      triggerSuccess("Buy order succesfully executed")
     }
   };
 
@@ -189,6 +190,7 @@ export default function MarketView() {
       await handleRefresh();
       setSelling(false)
       setSharesInput("")
+      triggerSuccess("Sell order succesfully executed")
     }
   };
 
@@ -203,7 +205,7 @@ export default function MarketView() {
               <Button
                 size="sm"
                 className="rounded-full w-10 h-10 p-0 bg-white border border-gray-200 hover:bg-green-50 text-slate-600"
-                onClick={() => {setSelectedStock(null);(window.location.href = `/app/dashboard`)}}
+                onClick={() => {localStorage.clear();(window.location.href = `/app/dashboard`)}}
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>

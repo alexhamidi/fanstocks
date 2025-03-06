@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import ProtectedRoute from "../../_components/ProtectedRoute";
 import { useMessage } from "../../_context/MessageContext";
+import { Button } from "@/components/ui/button"
 import { useLoading } from "../../_context/LoadingContext";
 import { createMarket } from "../../_api/markets";
 import { searchCommunity } from "../../_api/community";
@@ -29,6 +30,9 @@ import MarketComponent from "../../_components/MarketComponent";
 export default function Create() {
   // Market state
   const [marketName, setMarketName] = useState("");
+  const [startingPrice, setStartingPrice] = useState("");
+  const [startingCurrency, setStartingCurrency] = useState("");
+  const [unlisted, setUnlisted] = useState(false);
 
   // Integration state
   const [integrations, setIntegrations] = useState<Integration[]>([]);
@@ -147,14 +151,14 @@ export default function Create() {
 
   // Form submission
   const handleCreateMarket = async () => {
-    if (marketName === "") {
+    if (marketName.trim() === "") {
       triggerError("Must provide a name");
     } else if (integrations.length === 0) {
       triggerError("Must provide at least one integration");
     } else if (stocks.length === 0) {
       triggerError("Must provide at least one stock");
     } else {
-      await requestWrapper(
+      const response = await requestWrapper(
         "Error creating market",
         triggerError,
         "Market Created succesfully",
@@ -166,8 +170,9 @@ export default function Create() {
         integrations,
         stocks,
       );
+      if (!response) return
+      triggerSuccess("Market Created succesfully")
     }
-    triggerSuccess("Market Created succesfully")
   };
 
   return (
@@ -345,15 +350,40 @@ export default function Create() {
               </>
             }
           />
+        <div className="my-4">
+            <h4 className="font-semibold mb-1">Starting Stock Price</h4>
+            <input
+              type="text"
+              className="border border-zinc-400 rounded  p-[.3vh]"
+              onChange={(e) => setStartingPrice(e.target.value)}
+            />
+          </div>
+        <div className="my-4">
+            <h3 className="font-semibold mb-1">Starting User Currency</h3>
+            <input
+              type="text"
+              className="border border-zinc-400 rounded  p-[.3vh]"
+              onChange={(e) => setStartingCurrency(e.target.value)}
+            />
+          </div>
+        <div className="my-4">
+            <h3 className="font-semibold mb-1">Make Unlisted?</h3>
+            <input
+              type="checkbox"
+              onChange={()=>setUnlisted((orev)=>!orev)}
+              className="border border-zinc-400 rounded  p-[.3vh]"
+            />
+          </div>
+
 
           {/* Create Button */}
           <div className="my-4">
-            <button
-              className="bg-green-500 text-white p-1 px-2 rounded"
+            <Button
+              className="bg-green-500 hover:bg-green-500 text-white p-1 px-2 rounded"
               onClick={handleCreateMarket}
             >
               Create
-            </button>
+            </Button>
           </div>
         </div>
       </main>
